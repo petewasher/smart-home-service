@@ -1,22 +1,18 @@
 version: "3"
 
 services:
-  influxdb:
-    image: influxdb:1.5-alpine
-    ports:
-      - 8086:8086
-    volumes:
-      - influxdb:/var/lib/influxdb
 
   chronograf:
     image: chronograf:1.4-alpine
     ports:
       - 8888:8888
-    links:
-      - influxdb
     volumes:
       - chronograf:/var/lib/chronograf
-    command: ["chronograf", "--influxdb-url=http://influxdb:8086"]
+    command: ["chronograf"]
+    networks:
+      influx_db_data:
+        aliases:
+          - chronograf
 
   kapacitor:
     image: kapacitor:1.4-alpine
@@ -24,8 +20,17 @@ services:
       - 9092:9092
     volumes:
       - kapacitor:/var/lib/kapacitor
+      - ./conf/kapacitor.conf:/etc/kapacitor/kapacitor.conf:ro
     environment:
       - KAPACITOR_INFLUXDB_0_URLS_0=http://influxdb:8086
+    networks:
+      influx_db_data:
+        aliases:
+          - kapacitor
+
+networks:
+  influx_db_data:
+    external: true
 
 volumes:
   kapacitor:

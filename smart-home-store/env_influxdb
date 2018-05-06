@@ -1,0 +1,8 @@
+INFLUXDB_HTTP_AUTH_ENABLED=true
+INFLUXDB_ADMIN_USER=smart-home-admin
+INFLUXDB_ADMIN_PASSWORD=some-smart-root-password
+
+# Create a readwrite user and database
+INFLUXDB_DB=smarthomedata
+INFLUXDB_USER=smart-home-client
+INFLUXDB_USER_PASSWORD=some-clever-password
