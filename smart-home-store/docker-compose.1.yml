@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  influxdb:
+    image: influxdb:1.5-alpine
+    ports:
+      - 8086:8086
+    env_file: ./env_influxdb
+    volumes:
+      - influxdb:/var/lib/influxdb
+    networks:
+      influx_db_data:
+        aliases:
+          - influxdb
+
+networks:
+  influx_db_data:
+    external: true
+
+volumes:
+  influxdb:
