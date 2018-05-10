@@ -38,7 +38,7 @@ try:
     while True:
 
         cpu_temp = get_cpu_temp()
-        sensor_temp = weather.temperature
+        sensor_temp = weather.temperature()
         adjusted_temp = sensor_temp - ((cpu_temp - sensor_temp)/CPU_HEAT_FACTOR)
 
         print "CPU: ", cpu_temp
