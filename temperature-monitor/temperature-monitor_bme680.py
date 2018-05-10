@@ -4,6 +4,7 @@ import datetime
 import time
 import json
 from influxdb import InfluxDBClient
+from awsiot import AWSIoTUpdater
 
 sensor = bme680.BME680()
 
@@ -50,6 +51,9 @@ def get_timestamp():
 
 CPU_HEAT_FACTOR=2.0
 
+aws_iot = AWSIoTUpdater(config)
+
+
 try:
     while True:
         if sensor.get_sensor_data():
@@ -78,6 +82,13 @@ try:
                     }
                 }
             ]
+
+            aws_iot.connect()
+            aws_iot.publish({
+                "room": config['sensor_location'],
+                "temperature": adjusted_temp
+            })
+            aws_iot.disconnect()
 
             print client.write_points(json_body)
 

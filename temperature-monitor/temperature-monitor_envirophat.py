@@ -3,6 +3,7 @@ import datetime
 import time
 import json
 from influxdb import InfluxDBClient
+from awsiot import AWSIoTUpdater
 
 from envirophat import weather
 
@@ -31,6 +32,8 @@ def get_timestamp():
 UNIT='hPa'
 CPU_HEAT_FACTOR=2.0
 
+aws_iot = AWSIoTUpdater(config)
+
 try:
     while True:
 
@@ -56,6 +59,13 @@ try:
                 }
             }
         ]
+
+        aws_iot.connect()
+        aws_iot.publish({
+            "room": config['sensor_location'],
+            "temperature": adjusted_temp
+        })
+        aws_iot.disconnect()
 
         print client.write_points(json_body)
 

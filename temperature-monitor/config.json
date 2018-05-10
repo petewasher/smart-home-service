@@ -1,9 +1,21 @@
 {
+    "sensor_location": "downstairs",
     "database": {
         "host": "smart-home-server",
         "port": 8086,
         "username": "username",
         "password": "password",
         "db_name": "temperature"
+    },
+    "aws_iot": {
+        "certs": {
+            "root_ca": "certs/root_ca.pem",
+            "priv_key": "certs/private.pem.key",
+            "cert": "certs/certificate.pem.crt"
+        },
+        "endpoint": "",
+        "port": 8883,
+        "client": "",
+        "topic": ""
     }
 }
