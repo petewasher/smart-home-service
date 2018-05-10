@@ -49,7 +49,7 @@ client.create_database(config["database"]["db_name"])
 def get_timestamp():
     return datetime.datetime.utcnow().isoformat()
 
-CPU_HEAT_FACTOR=2.0
+CPU_HEAT_FACTOR=config['heatfactor']
 
 aws_iot = AWSIoTUpdater(config)
 

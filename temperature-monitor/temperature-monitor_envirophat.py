@@ -30,7 +30,7 @@ def get_timestamp():
     return datetime.datetime.utcnow().isoformat()
 
 UNIT='hPa'
-CPU_HEAT_FACTOR=2.0
+CPU_HEAT_FACTOR=config['heatfactor']
 
 aws_iot = AWSIoTUpdater(config)
 

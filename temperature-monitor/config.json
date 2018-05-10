@@ -17,5 +17,6 @@
         "port": 8883,
         "client": "",
         "topic": ""
-    }
+    },
+    "heatfactor": 2.4
 }
