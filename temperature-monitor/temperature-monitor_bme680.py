@@ -44,8 +44,6 @@ client = InfluxDBClient(
     config["database"]["password"],
     config["database"]["db_name"])
 
-client.create_database(config["database"]["db_name"])
-
 def get_timestamp():
     return datetime.datetime.utcnow().isoformat()
 
