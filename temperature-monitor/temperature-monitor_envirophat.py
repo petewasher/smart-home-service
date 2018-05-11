@@ -33,6 +33,7 @@ UNIT='hPa'
 CPU_HEAT_FACTOR=config['heatfactor']
 
 aws_iot = AWSIoTUpdater(config)
+aws_iot.connect()
 
 try:
     while True:
@@ -60,12 +61,15 @@ try:
             }
         ]
 
-        aws_iot.connect()
-        aws_iot.publish({
-            "room": config['sensor_location'],
-            "temperature": adjusted_temp
-        })
-        aws_iot.disconnect()
+        try:
+          aws_iot.publish({
+              "room": config['sensor_location'],
+              "temperature": adjusted_temp
+          })
+        except:
+            print "Failed to publish to mqtt!"
+            pass
+        
 
         print client.write_points(json_body)
 
@@ -75,3 +79,5 @@ try:
 
 except KeyboardInterrupt:
     pass
+
+aws_iot.disconnect()
