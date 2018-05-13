@@ -34,6 +34,7 @@ class TemperatureMonitorBase(object):
     def calibrate(self, sensor_temp):
 
         cpu_temp = self.get_cpu_temp()
+
         adjusted_temp = sensor_temp - ((cpu_temp - sensor_temp)/self.CPU_HEAT_FACTOR)
         return adjusted_temp
 
@@ -58,19 +59,25 @@ class monitor_envirophat(TemperatureMonitorBase):
 class monitor_bme680(TemperatureMonitorBase):
     def __init__(self, config):
         super(monitor_bme680, self).__init__(config)
+
+        self.config = config
+
         import bme680
         self.sensor = bme680.BME680()
         self.sensor.set_humidity_oversample(bme680.OS_2X)
         self.sensor.set_pressure_oversample(bme680.OS_4X)
         self.sensor.set_temperature_oversample(bme680.OS_8X)
         self.sensor.set_filter(bme680.FILTER_SIZE_3)
-        self.sensor.set_gas_status(bme680.ENABLE_GAS_MEAS)
 
-        self.sensor.set_gas_heater_temperature(320)
-        self.sensor.set_gas_heater_duration(150)
-        self.sensor.select_gas_heater_profile(0)
+        if config['aqi_measure']:
+            self.sensor.set_gas_status(bme680.ENABLE_GAS_MEAS)
+            self.sensor.set_gas_heater_temperature(320)
+            self.sensor.set_gas_heater_duration(150)
+            self.sensor.select_gas_heater_profile(0)
+        else:
+            self.sensor.set_gas_status(bme680.DISABLE_GAS_MEAS)
 
-        self.iaq_calc_thread = threading.Thread(target=self.measure)
+        self.measure_thread = threading.Thread(target=self.measure)
         self.halt_event = threading.Event()
 
         self.iaq = None
@@ -85,42 +92,32 @@ class monitor_bme680(TemperatureMonitorBase):
 
         self.sensor_ready = False
 
-    def measure(self):
-        while not self.halt_event.isSet():
-            try:
-                if self.sensor.get_sensor_data() and self.sensor.data.heat_stable:
-                    gas = self.sensor.data.gas_resistance
-                    gas_offset = self.gas_baseline - gas
+    def _aqi_calculation(self):
+        gas = self.sensor.data.gas_resistance
+        gas_offset = self.gas_baseline - gas
 
-                    hum = self.sensor.data.humidity
-                    hum_offset = hum - self.hum_baseline
+        hum = self.sensor.data.humidity
+        hum_offset = hum - self.hum_baseline
 
-                    # Calculate hum_score as the distance from the hum_baseline.
-                    if hum_offset > 0:
-                        hum_score = (100 - self.hum_baseline - hum_offset) / (100 - self.hum_baseline) * (self.hum_weighting * 100)
+        # Calculate hum_score as the distance from the hum_baseline.
+        if hum_offset > 0:
+            hum_score = (100 - self.hum_baseline - hum_offset) / (100 - self.hum_baseline) * (self.hum_weighting * 100)
 
-                    else:
-                        hum_score = (self.hum_baseline + hum_offset) / self.hum_baseline * (self.hum_weighting * 100)
+        else:
+            hum_score = (self.hum_baseline + hum_offset) / self.hum_baseline * (self.hum_weighting * 100)
 
-                    # Calculate gas_score as the distance from the gas_baseline.
-                    if gas_offset > 0:
-                        gas_score = (gas / self.gas_baseline) * (100 - (self.hum_weighting * 100))
+        # Calculate gas_score as the distance from the gas_baseline.
+        if gas_offset > 0:
+            gas_score = (gas / self.gas_baseline) * (100 - (self.hum_weighting * 100))
 
-                    else:
-                        gas_score = 100 - (self.hum_weighting * 100)
+        else:
+            gas_score = 100 - (self.hum_weighting * 100)
 
-                    # Calculate air_quality_score.
-                    air_quality_score = hum_score + gas_score
+        # Calculate air_quality_score.
+        air_quality_score = hum_score + gas_score
+        return air_quality_score
 
-                    self.iaq = air_quality_score
-                    self.humidity = self.sensor.data.humidity
-                    self.temperature = self.sensor.data.temperature
-                    self.pressure = self.sensor.data.pressure
-
-            except Exception, ex:
-                logger.exception("Error getting sensor data")
-
-    def prepare(self):
+    def _gas_burn_in(self):
         burn_in_time = 300
         logger.info("Performing burn in. This will take %ss.", burn_in_time)
 
@@ -150,11 +147,35 @@ class monitor_bme680(TemperatureMonitorBase):
 
         logger.info("Gas baseline: {0} Ohms, humidity baseline: {1:.2f} %RH\n".format(self.gas_baseline, self.hum_baseline))
 
-        self.iaq_calc_thread.start()
+
+    def measure(self):
+        while not self.halt_event.isSet():
+            try:
+                if self.sensor.get_sensor_data() and self.sensor.data.heat_stable:
+
+                    # Cannot trust temperature whilst AQI heater is running
+                    if self.config['aqi_measure']:
+                        self.temperature = None
+                        self.iaq = self._aqi_calculation()
+                    else:
+                        self.temperature = self.sensor.data.temperature
+                        self.iaq = None
+
+                    self.humidity = self.sensor.data.humidity
+                    self.pressure = self.sensor.data.pressure
+
+            except Exception, ex:
+                logger.exception("Error getting sensor data")
+
+    def prepare(self):
+        if self.config['aqi_measure']:
+            self._gas_burn_in()
+
+        self.measure_thread.start()
 
     def cleanup(self):
         self.halt_event.set()
-        self.iaq_calc_thread.join()
+        self.measure_thread.join()
 
     def get_next_reading(self):
         return {
@@ -213,11 +234,12 @@ def main():
         logger.error("Please specify hardware type from: %s", hardware_class.keys())
         exit()
 
+    for reporter in reporters:
+        reporter.prepare()
+
     hardware = hardware_class[args.hardware](config)
     hardware.prepare()
 
-    for reporter in reporters:
-        reporter.prepare()
 
     while True:
         try:
