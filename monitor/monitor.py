@@ -188,7 +188,7 @@ class monitor_bme680(TemperatureMonitorBase):
                 "iaq": self.iaq
             }
         else:
-            raise Exception("Sensor not ready")
+            raise ValueError("Sensor not ready")
 
 def monitor_owl():
     pass
