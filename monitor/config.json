@@ -5,7 +5,8 @@
         "port": 8086,
         "username": "smart-home-client",
         "password": "YjYzODhkY2QtMGM2OS00NzRjLTk1MzYtY2FiYTU4MWI2ZTRh",
-        "db_name": "smarthomedata"
+        "db_name": "smarthomedata",
+        "measurement_name": "temperature"
     },
     "aws_iot": {
         "certs": {

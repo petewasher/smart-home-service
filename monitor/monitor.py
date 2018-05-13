@@ -5,8 +5,18 @@ import time
 import json
 import subprocess
 from awsiot import AWSIoTUpdater
+from influxdb_reporter import InfluxDBReporter
 
-def TemperatureMonitorBase(object):
+# Configure logging
+import logging
+logger = logging.getLogger("Monitor.Main")
+logger.setLevel(logging.INFO)
+streamHandler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+streamHandler.setFormatter(formatter)
+logger.addHandler(streamHandler)
+
+class TemperatureMonitorBase(object):
     def __init__(self, config):
         self.CPU_HEAT_FACTOR = config['heatfactor']
 
@@ -42,21 +52,27 @@ class monitor_dummy():
         pass
 
     def get_next_reading(self):
-        return 855.223
+        return {
+            "temperature": 24.3,
+            "pressure": 1004.001
+        }
 
 def main():
     parser = argparse.ArgumentParser(description='Report from hardware')
     parser = argparse.ArgumentParser()
     parser.add_argument('--hardware', help='foo help')
+    parser.add_argument('--config', default="config.json")
     args = parser.parse_args()
 
+    logger.debug(args)
+
     config = {}
-    with open("./config.json") as config_f:
+    with open(args.config) as config_f:
         data = config_f.read()
         config = json.loads(data)
 
     reporters = (
-        #influxdb(),
+        InfluxDBReporter(config),
         AWSIoTUpdater(config),
         )
 
@@ -68,7 +84,7 @@ def main():
     }
 
     if not args.hardware:
-        print "Please specify hardware type from: %s" % hardware_class.keys()
+        logger.error("Please specify hardware type from: %s", hardware_class.keys())
         exit()
 
     hardware = hardware_class[args.hardware](config)
@@ -80,21 +96,15 @@ def main():
         try:
             reading = hardware.get_next_reading()
             for reporter in reporters:
+                logger.debug("Put %s %s", reporter, reading)
                 reporter.queue.put(reading)
 
-            time.sleep(5)
+            time.sleep(10)
+
         except KeyboardInterrupt:
             for reporter in reporters:
                 reporter.stop()
             break
-
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
     main()

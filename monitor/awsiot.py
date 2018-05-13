@@ -6,12 +6,11 @@ import logging
 
 # Configure logging
 logger = logging.getLogger("AWSIoTPythonSDK.core")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 streamHandler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
-
 class AWSIoTUpdater(object):
     def __init__(self, config):
         self.root_ca = config['aws_iot']['certs']['root_ca']
@@ -44,8 +43,7 @@ class AWSIoTUpdater(object):
 
                 try:
                     result = self._publish(payload)
-                    if not result:
-                        self.queue.put(payload)
+                    logger.info("Delivery result: %s", result)
                 except Exception, ex:
                     print ex
 
