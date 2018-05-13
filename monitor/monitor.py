@@ -79,6 +79,9 @@ class monitor_bme680(TemperatureMonitorBase):
         self.temperature = 0
 
         self.burn_in_data = []
+        self.gas_baseline = None
+        self.hum_baseline = None
+        self.hum_weighting = None
 
         self.sensor_ready = False
 
@@ -87,24 +90,24 @@ class monitor_bme680(TemperatureMonitorBase):
             try:
                 if self.sensor.get_sensor_data() and self.sensor.data.heat_stable:
                     gas = self.sensor.data.gas_resistance
-                    gas_offset = gas_baseline - gas
+                    gas_offset = self.gas_baseline - gas
 
                     hum = self.sensor.data.humidity
-                    hum_offset = hum - hum_baseline
+                    hum_offset = hum - self.hum_baseline
 
                     # Calculate hum_score as the distance from the hum_baseline.
                     if hum_offset > 0:
-                        hum_score = (100 - hum_baseline - hum_offset) / (100 - hum_baseline) * (hum_weighting * 100)
+                        hum_score = (100 - self.hum_baseline - hum_offset) / (100 - self.hum_baseline) * (self.hum_weighting * 100)
 
                     else:
-                        hum_score = (hum_baseline + hum_offset) / hum_baseline * (hum_weighting * 100)
+                        hum_score = (self.hum_baseline + hum_offset) / self.hum_baseline * (self.hum_weighting * 100)
 
                     # Calculate gas_score as the distance from the gas_baseline.
                     if gas_offset > 0:
-                        gas_score = (gas / gas_baseline) * (100 - (hum_weighting * 100))
+                        gas_score = (gas / self.gas_baseline) * (100 - (self.hum_weighting * 100))
 
                     else:
-                        gas_score = 100 - (hum_weighting * 100)
+                        gas_score = 100 - (self.hum_weighting * 100)
 
                     # Calculate air_quality_score.
                     air_quality_score = hum_score + gas_score
@@ -130,22 +133,22 @@ class monitor_bme680(TemperatureMonitorBase):
             curr_time = time.time()
             if self.sensor.get_sensor_data() and self.sensor.data.heat_stable:
                 gas = self.sensor.data.gas_resistance
-                burn_in_data.append(gas)
+                self.burn_in_data.append(gas)
                 logger.debug("Gas: {0} Ohms".format(gas))
                 time.sleep(1)
 
         logger.info("Burn in complete.")
 
-        gas_baseline = sum(self.burn_in_data[-50:]) / 50.0
+        self.gas_baseline = sum(self.burn_in_data[-50:]) / 50.0
 
         # Set the humidity baseline to 40%, an optimal indoor humidity.
-        hum_baseline = 40.0
+        self.hum_baseline = 40.0
 
         # This sets the balance between humidity and gas reading in the
         # calculation of air_quality_score (25:75, humidity:gas)
-        hum_weighting = 0.25
+        self.hum_weighting = 0.25
 
-        logger.info("Gas baseline: {0} Ohms, humidity baseline: {1:.2f} %RH\n".format(gas_baseline, hum_baseline))
+        logger.info("Gas baseline: {0} Ohms, humidity baseline: {1:.2f} %RH\n".format(self.gas_baseline, self.hum_baseline))
 
         self.iaq_calc_thread.start()
 
