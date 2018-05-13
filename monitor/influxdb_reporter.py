@@ -39,7 +39,8 @@ class InfluxDBReporter(object):
                 reading = self.queue.get(timeout=5)
 
             except Queue.Empty:
-                pass
+                continue
+
 
             try:
                 json_body = [
