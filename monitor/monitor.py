@@ -158,11 +158,11 @@ class monitor_bme680(TemperatureMonitorBase):
                         self.temperature = None
                         self.iaq = self._aqi_calculation()
                     else:
-                        self.temperature = self.sensor.data.temperature
+                        self.temperature = float(self.sensor.data.temperature)
                         self.iaq = None
 
-                    self.humidity = self.sensor.data.humidity
-                    self.pressure = self.sensor.data.pressure
+                    self.humidity = float(self.sensor.data.humidity)
+                    self.pressure = float(self.sensor.data.pressure)
 
             except Exception, ex:
                 logger.exception("Error getting sensor data")
