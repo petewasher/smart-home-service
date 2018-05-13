@@ -164,6 +164,8 @@ class monitor_bme680(TemperatureMonitorBase):
                     self.humidity = float(self.sensor.data.humidity)
                     self.pressure = float(self.sensor.data.pressure)
 
+                    self.sensor_ready = True
+
             except Exception, ex:
                 logger.exception("Error getting sensor data")
 
@@ -178,12 +180,15 @@ class monitor_bme680(TemperatureMonitorBase):
         self.measure_thread.join()
 
     def get_next_reading(self):
-        return {
-            "temperature": self.calibrate(self.temperature),
-            "pressure": self.pressure,
-            "humidity": self.humidity,
-            "iaq": self.iaq
-        }
+        if self.sensor_ready is True:
+            return {
+                "temperature": self.calibrate(self.temperature),
+                "pressure": self.pressure,
+                "humidity": self.humidity,
+                "iaq": self.iaq
+            }
+        else:
+            raise Exception("Sensor not ready yet")
 
 def monitor_owl():
     pass
