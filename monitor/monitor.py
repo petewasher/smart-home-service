@@ -200,7 +200,7 @@ def main():
         )
 
     hardware_class = {
-        #"bme680": monitor_bme680,
+        "bme680": monitor_bme680,
         "envirophat": monitor_envirophat,
         #"owl": monitor_owl,
         "dummy": monitor_dummy
