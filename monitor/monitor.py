@@ -151,10 +151,10 @@ class monitor_bme680(TemperatureMonitorBase):
     def measure(self):
         while not self.halt_event.isSet():
             try:
-                if self.sensor.get_sensor_data() and self.sensor.data.heat_stable:
+                if self.sensor.get_sensor_data():
 
                     # Cannot trust temperature whilst AQI heater is running
-                    if self.config['aqi_measure']:
+                    if self.config['aqi_measure'] and self.sensor.data.heat_stable:
                         self.temperature = None
                         self.iaq = self._aqi_calculation()
                     else:
@@ -188,7 +188,7 @@ class monitor_bme680(TemperatureMonitorBase):
                 "iaq": self.iaq
             }
         else:
-            raise Exception("Sensor not ready yet")
+            raise Exception("Sensor not ready")
 
 def monitor_owl():
     pass
@@ -254,7 +254,8 @@ def main():
                 reporter.queue.put(reading)
 
             time.sleep(10)
-
+        except ValueError:
+            continue
         except KeyboardInterrupt:
             for reporter in reporters:
                 reporter.stop()
