@@ -157,7 +157,7 @@ class monitor_bme680(TemperatureMonitorBase):
         return {
             "temperature": self.calibrate(self.temperature),
             "pressure": self.pressure,
-            "humidity": self.humidity
+            "humidity": self.humidity,
             "iaq": self.iaq
         }
 
