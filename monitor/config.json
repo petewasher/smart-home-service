@@ -1,0 +1,23 @@
+{
+    "sensor_location": "testing",
+    "database": {
+        "host": "smarthome.petewasher.net",
+        "port": 8086,
+        "username": "smart-home-client",
+        "password": "YjYzODhkY2QtMGM2OS00NzRjLTk1MzYtY2FiYTU4MWI2ZTRh",
+        "db_name": "smarthomedata"
+    },
+    "aws_iot": {
+        "certs": {
+            "root_ca": "certs/root_ca.pem",
+            "priv_key": "certs/private.pem.key",
+            "cert": "certs/certificate.pem.crt"
+        },
+        "endpoint": "a1gzovq6hrea1k.iot.eu-west-1.amazonaws.com",
+        "port": 8883,
+        "client": "downstairs_temperature",
+        "topic": "arn:aws:iot:eu-west-1:332270681784:topic/temperature/downstairs",
+        "measurement_name": "temperature"
+    },
+    "heatfactor": 2.4
+}
