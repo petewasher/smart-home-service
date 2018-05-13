@@ -30,22 +30,32 @@ class AWSIoTUpdater(object):
         self.process_thread = threading.Thread(target=self.process)
         self.halt_event = threading.Event()
 
+        # Counter - only take the 10th reading
+        self.discard_count = 0
+        self.discard_every = 10
+
     def process(self):
         while not self.halt_event.isSet():
             try:
                 reading = self.queue.get(timeout=1)
-                payload = {
-                    "room": self.room,
-                    self.measurement: reading
-                }
+                self.discard_count += 1
 
-                logger.info("Deliver: %s", payload)
+                # Only send every 10th message
+                if self.discard_count > self.discard_every:
+                    self.discard_count = 0
 
-                try:
-                    result = self._publish(payload)
-                    logger.info("Delivery result: %s", result)
-                except Exception, ex:
-                    print ex
+                    payload = {
+                        "room": self.room,
+                        self.measurement: reading
+                    }
+
+                    logger.info("Deliver: %s", payload)
+
+                    try:
+                        result = self._publish(payload)
+                        logger.info("Delivery result: %s", result)
+                    except Exception, ex:
+                        print ex
 
             except Queue.Empty:
                 pass
