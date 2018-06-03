@@ -5,6 +5,7 @@ import time
 import json
 import subprocess
 import threading
+import sys
 from awsiot import AWSIoTUpdater
 from influxdb_reporter import InfluxDBReporter
 
@@ -190,8 +191,34 @@ class monitor_bme680(TemperatureMonitorBase):
         else:
             raise ValueError("Sensor not ready")
 
-def monitor_owl():
-    pass
+class monitor_owl():
+    def __init__(self, config):
+        self.watts = 0.0
+
+        self.measure_thread = threading.Thread(target=self.owl_read)
+        self.halt_event = threading.Event()
+
+    def owl_read(self):
+        while not self.halt_event.isSet():
+            line = sys.stdin.readline()
+            try:
+                if line is not '':
+                    logger.debug("Recorded watts: %s", line)
+                    self.watts = float(line)
+            except:
+                pass
+
+    def prepare(self):
+        self.measure_thread.start()
+
+    def cleanup(self):
+        self.halt_event.set()
+        self.measure_thread.join()
+
+    def get_next_reading(self):
+        return {
+            "watts": self.watts
+        }
 
 class monitor_dummy():
     def __init__(self, config):
@@ -271,3 +298,4 @@ if __name__ == "__main__":
     time.sleep(25)
     logger.info("Starting up...")
     main()
+
