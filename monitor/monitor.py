@@ -239,13 +239,15 @@ def main():
         logger.error("Please specify hardware type from: %s", hardware_class.keys())
         exit()
 
+    logger.info("Preparing reporters...")
     for reporter in reporters:
         reporter.prepare()
 
+    logger.info("Preparing hardware...")
     hardware = hardware_class[args.hardware](config)
     hardware.prepare()
 
-
+    logger.info("Starting measurements...")
     while True:
         try:
             reading = hardware.get_next_reading()
@@ -265,4 +267,7 @@ def main():
             break
 
 if __name__ == "__main__":
+    logger.warning("Performing initial sleep...")
+    time.sleep(25)
+    logger.info("Starting up...")
     main()
