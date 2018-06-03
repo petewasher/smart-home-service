@@ -294,8 +294,6 @@ def main():
             break
 
 if __name__ == "__main__":
-    logger.warning("Performing initial sleep...")
-    time.sleep(25)
     logger.info("Starting up...")
     main()
 
