@@ -36,7 +36,7 @@ class TemperatureMonitorBase(object):
 
         cpu_temp = self.get_cpu_temp()
 
-        adjusted_temp = sensor_temp - ((cpu_temp - sensor_temp)/self.CPU_HEAT_FACTOR)
+        adjusted_temp = sensor_temp - ((cpu_temp - sensor_temp)) + self.CPU_HEAT_FACTOR 
         return adjusted_temp
 
 class monitor_envirophat(TemperatureMonitorBase):
@@ -252,7 +252,7 @@ def main():
 
     reporters = (
         InfluxDBReporter(config),
-        AWSIoTUpdater(config),
+        #AWSIoTUpdater(config),
         )
 
     hardware_class = {
